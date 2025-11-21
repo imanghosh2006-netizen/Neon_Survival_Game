@@ -375,7 +375,7 @@
                 this.y = height/2;
                 this.hp = 100;
                 this.maxHp = 100;
-                this.speed = 5.5;
+                this.speed = 5.5; // Increased from 3 to 5.5 for fast mobile gameplay
                 this.color = '#0ff';
                 this.radius = 15;
                 
@@ -499,14 +499,46 @@
                     this.y = Math.random()<0.5 ? -30 : height+30;
                 }
                 
-                // Difficulty scaling
-                const scale = 1 + (time / 60) * 0.1; // 10% harder every minute
+                // Determine Type based on Player Level
+                // Level 1: Basic only
+                // Level 2+: Adds "Hornet" (Fast, Low HP)
+                // Level 4+: Adds "Tank" (Slow, High HP)
                 
-                this.hp = 20 * scale;
-                this.maxHp = this.hp;
-                this.speed = (1 + Math.random()) * (0.8 + scale*0.05);
-                this.size = 12;
-                this.color = '#f03';
+                const types = ['basic'];
+                if (level >= 2) types.push('hornet');
+                if (level >= 4) types.push('tank');
+                
+                const type = types[Math.floor(Math.random() * types.length)];
+                
+                // Difficulty scaling (Time based)
+                const scale = 1 + (time / 60) * 0.1; 
+
+                this.type = type;
+
+                if (type === 'basic') {
+                    this.hp = 20 * scale;
+                    this.maxHp = this.hp;
+                    this.speed = (1 + Math.random()) * (0.8 + scale*0.05);
+                    this.size = 12;
+                    this.color = '#f03'; // Red
+                    this.xpValue = 1;
+                } 
+                else if (type === 'hornet') {
+                    this.hp = 10 * scale;
+                    this.maxHp = this.hp;
+                    this.speed = (2.5 + Math.random()) * (0.8 + scale*0.05); // Very Fast
+                    this.size = 8;
+                    this.color = '#ff0'; // Yellow
+                    this.xpValue = 2;
+                }
+                else if (type === 'tank') {
+                    this.hp = 60 * scale; // High HP
+                    this.maxHp = this.hp;
+                    this.speed = (0.5 + Math.random() * 0.5) * (0.8 + scale*0.05); // Slow
+                    this.size = 20;
+                    this.color = '#a0f'; // Purple
+                    this.xpValue = 5;
+                }
             }
 
             update() {
@@ -519,19 +551,19 @@
                 if (d < player.radius + this.size) {
                     player.hp -= 10;
                     this.hp = 0; // Enemy dies on impact
-                    createExplosion(this.x, this.y, '#f00');
+                    createExplosion(this.x, this.y, this.color);
                     if(player.hp <= 0) gameOver();
                 }
             }
 
             takeDamage(amt) {
                 this.hp -= amt;
-                // Show damage number
                 damageNumbers.push({x: this.x, y: this.y, text: Math.floor(amt), life: 30});
                 
                 if (this.hp <= 0) {
-                    createExplosion(this.x, this.y, '#f03');
-                    gems.push(new Gem(this.x, this.y));
+                    createExplosion(this.x, this.y, this.color);
+                    // Gems give different XP based on enemy type
+                    gems.push(new Gem(this.x, this.y, this.xpValue));
                 }
             }
 
@@ -540,39 +572,53 @@
                 ctx.shadowBlur = 5;
                 ctx.shadowColor = this.color;
                 ctx.beginPath();
-                // Diamond shape
-                ctx.moveTo(this.x, this.y - this.size);
-                ctx.lineTo(this.x + this.size, this.y);
-                ctx.lineTo(this.x, this.y + this.size);
-                ctx.lineTo(this.x - this.size, this.y);
+                
+                if (this.type === 'tank') {
+                    // Square for Tank
+                    ctx.fillRect(this.x - this.size, this.y - this.size, this.size*2, this.size*2);
+                } else if (this.type === 'hornet') {
+                    // Triangle for Hornet
+                    ctx.moveTo(this.x + Math.cos(frame*0.2)*5, this.y - this.size); // Wiggle effect
+                    ctx.lineTo(this.x + this.size, this.y);
+                    ctx.lineTo(this.x - this.size, this.y);
+                    ctx.fill();
+                } else {
+                    // Diamond for Basic
+                    ctx.moveTo(this.x, this.y - this.size);
+                    ctx.lineTo(this.x + this.size, this.y);
+                    ctx.lineTo(this.x, this.y + this.size);
+                    ctx.lineTo(this.x - this.size, this.y);
+                    ctx.fill();
+                }
                 ctx.closePath();
-                ctx.fill();
             }
         }
 
         class Gem {
-            constructor(x, y) {
+            constructor(x, y, val = 1) {
                 this.x = x;
                 this.y = y;
-                this.r = 4;
+                this.r = 4 + (val * 0.5); // Bigger gems for better enemies
+                this.val = val;
+                this.color = val > 1 ? (val > 4 ? '#a0f' : '#ff0') : '#0f0';
             }
             update() {
                 // Magnet effect
                 const d = Math.hypot(player.x - this.x, player.y - this.y);
-                if (d < 100) {
-                    this.x += (player.x - this.x) * 0.15;
-                    this.y += (player.y - this.y) * 0.15;
+                if (d < 120) { // Slightly increased magnet range
+                    this.x += (player.x - this.x) * 0.2;
+                    this.y += (player.y - this.y) * 0.2;
                     if(d < 20) {
-                        gainXp(1);
-                        return false; // Collected
+                        gainXp(this.val);
+                        return false; 
                     }
                 }
                 return true;
             }
             draw() {
-                ctx.fillStyle = '#0f0';
+                ctx.fillStyle = this.color;
                 ctx.shadowBlur = 5;
-                ctx.shadowColor = '#0f0';
+                ctx.shadowColor = this.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
                 ctx.fill();
@@ -639,6 +685,10 @@
         function levelUp() {
             gameState = 'LEVELUP';
             level++;
+            
+            // PASSIVE UPGRADE: Better maneuvering every level
+            player.speed += 0.2; 
+            
             xp = 0;
             maxXp = Math.floor(maxXp * 1.5);
             levelVal.innerText = level;
@@ -646,7 +696,6 @@
             
             // Generate Cards
             cardsBox.innerHTML = '';
-            // Pick 3 random
             const options = [];
             while(options.length < 3) {
                 const u = upgrades[Math.floor(Math.random() * upgrades.length)];
