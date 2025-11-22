@@ -21,7 +21,6 @@ Built using **HTML**, **CSS**, and **JavaScript**, this project challenges playe
 - **JavaScript (ES6)** for game logic and interactivity
 
 ## ▶️ How to Play
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/https://github.com/imanghosh2006-netizen/neon-survival-game.git
-   cd neon-survival-game
+Click the link below to play the Neon Survival Game in your browser:
+
+🔗 [Play Neon Survival Game](https://imanghosh2006-netizen.github.io/Neon_Survival_Game/)
