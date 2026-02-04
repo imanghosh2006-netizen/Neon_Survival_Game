@@ -21,6 +21,6 @@ Built using **HTML**, **CSS**, and **JavaScript**, this project challenges playe
 - **JavaScript (ES6)** for game logic and interactivity
 
 ## ▶️ How to Play
-Click the link below to play the Neon Survival Game in your browser:
+Click the link below to play the game:
 
 🔗 [Play Neon Survival Game](https://imanghosh2006-netizen.github.io/Neon_Survival_Game/)
